@@ -1,7 +1,3 @@
-# examples/guard-example.yaml
-# A sample ServiceGuard pointing at demo-app. Every field beyond
-# targetDeployment is optional (the CRD supplies safe defaults); they are
-# spelled out here for clarity.
 apiVersion: ops.example.com/v1
 kind: ServiceGuard
 metadata:
@@ -14,7 +10,7 @@ spec:
   cpuLowPercent: 20
   restartOnCrashLoop: true
   mode: heal
-  # Part II remediations (all default-safe; shown explicitly)
+
   gcDeadPods: true
   deadPodTTLMinutes: 60
   oomRestartEnabled: true
