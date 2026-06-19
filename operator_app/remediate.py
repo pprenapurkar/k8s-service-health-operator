@@ -9,9 +9,8 @@ cluster or a kubeconfig.
 import time
 from datetime import datetime, timezone
 
-# ==========================================================================
-# Part I §12: crash-loop restart with a budget
-# ==========================================================================
+# Crash-loop restart with a budget
+
 # remember recent restarts per pod to avoid infinite churn
 _restart_log: dict[str, list[float]] = {}
 _MAX_RESTARTS = 3
@@ -43,8 +42,8 @@ def remediate_crashloops(target: str, namespace: str,
     return restarted
 
 
-# ==========================================================================
-# Part I §13: CPU-based auto-scaling decision (pure) + action
+
+# CPU-based auto-scaling decision 
 # ==========================================================================
 def decide_replicas(current: int, cpu: float | None, spec: dict) -> int:
     """Pure decision: returns the desired replica count.
@@ -75,8 +74,8 @@ def apply_scaling(target: str, namespace: str,
     return True
 
 
-# ==========================================================================
-# Part II §6: dead-pod garbage collection (pure)
+
+# Dead-pod garbage collection
 # ==========================================================================
 def find_dead_pods(pod_summaries: list[dict], ttl_minutes: int,
                    now: datetime | None = None) -> list[str]:
@@ -91,7 +90,6 @@ def find_dead_pods(pod_summaries: list[dict], ttl_minutes: int,
             continue
         finished = p.get("finished_at")
         if finished is None:
-            # no timestamp -> be conservative, skip this pass
             continue
         age_min = (now - finished).total_seconds() / 60.0
         if age_min >= ttl_minutes:
@@ -99,8 +97,8 @@ def find_dead_pods(pod_summaries: list[dict], ttl_minutes: int,
     return dead
 
 
-# ==========================================================================
-# Part II §7: OOMKill-aware controlled restart (pure detection/decision)
+
+# OOMKill-aware controlled restart 
 # ==========================================================================
 _oom_log: dict[str, list[float]] = {}   # deployment -> recent OOM action times
 
@@ -131,8 +129,8 @@ def record_oom_restart(deployment: str, now: float | None = None) -> None:
     _oom_log.setdefault(deployment, []).append(now or time.time())
 
 
-# ==========================================================================
-# Part II §8: stuck-Terminating detection + force-delete safety gate (pure)
+
+# Stuck-Terminating detection + force-delete safety gate
 # ==========================================================================
 def find_stuck_terminating(pod_summaries: list[dict], grace_minutes: int,
                            now: datetime | None = None) -> list[dict]:
@@ -159,8 +157,8 @@ def may_force_delete(force_enabled: bool, require_node_gone: bool,
     return True                        # opt-out path: caller accepted the risk
 
 
-# ==========================================================================
-# Part II §9: advisory audit of preventable (Design-bucket) issues (pure)
+
+# Advisory audit of preventable issues
 # ==========================================================================
 def audit_deployment(dep: dict) -> list[dict]:
     """Pure audit over a simplified deployment dict. Returns findings.
@@ -188,8 +186,8 @@ def audit_deployment(dep: dict) -> list[dict]:
     return findings
 
 
-# ==========================================================================
-# Part II §10: scheduled scale-down for non-prod (pure)
+
+# Scheduled scale-down for non-prod 
 # ==========================================================================
 def scheduled_target_replicas(now: datetime, normal: int,
                               quiet: int,
