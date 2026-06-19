@@ -1,9 +1,3 @@
-# deploy/operator.yaml
-# Runs exactly one replica of the operator in-cluster, bound to the
-# least-privilege service account from rbac/rbac.yaml. One replica is correct:
-# two operators acting on the same resources would race. (Production uses
-# leader election; for this project a single instance is the simplest correct
-# choice.)
 apiVersion: apps/v1
 kind: Deployment
 metadata:
