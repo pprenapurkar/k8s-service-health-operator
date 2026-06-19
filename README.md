@@ -5,11 +5,6 @@
   metric-aware self-healing it doesn't have out of the box.</em>
 </p>
 
-<p align="center">
-  <code>Python 3.11</code> · <code>kopf</code> · <code>Kubernetes</code> ·
-  <code>Prometheus / PromQL</code> · <code>kind</code> · <code>RBAC</code>
-</p>
-
 ---
 
 You declare a **`ServiceGuard`** custom resource — which deployment to watch, the
