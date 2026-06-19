@@ -174,16 +174,3 @@ tested without a cluster.
 - **[Architecture](docs/architecture.md)** — the loop, modes, rails, CRD reference
 - **[Runbook (core)](docs/runbook-operator.md)** & **[Runbook (extended)](docs/runbook-operator-extended.md)**
 
-## A note on the package name
-
-The build guides name the Python package `operator`. Python ships a built-in
-`operator` module imported at startup, so a local package named `operator` is
-permanently shadowed and `from operator import k8s` raises `ImportError`. This
-repo names the package **`operator_app`** — the one change required to make the
-code run. See [`docs/VERIFICATION.md`](docs/VERIFICATION.md) for the full list of
-(three) necessary deviations from the guides.
-
----
-
-<p align="center"><sub>Built as an SRE portfolio project — a control loop that
-maintains other workloads as cluster infrastructure.</sub></p>
