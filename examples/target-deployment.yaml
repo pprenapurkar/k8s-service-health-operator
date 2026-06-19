@@ -1,15 +1,3 @@
-# examples/target-deployment.yaml
-# A small, deliberately controllable workload for the operator to guard.
-# CPU requests+limits are non-negotiable: Prometheus measures CPU usage
-# relative to the request, so without a request there is no meaningful
-# utilisation percentage to compute.
-#
-# DEVIATION FROM THE GUIDE: the guide uses hashicorp/http-echo, which is a
-# distroless image with no shell -- so the guide's live demos that `kubectl
-# exec ... sh -c "while true..."` to spike CPU (or allocate memory for an OOM)
-# cannot actually run against it. We use nginx:1.27-alpine instead: it has a
-# shell, serves HTTP, and accepts the same resource requests, so every live
-# demo in the guides works as written.
 apiVersion: apps/v1
 kind: Deployment
 metadata:
