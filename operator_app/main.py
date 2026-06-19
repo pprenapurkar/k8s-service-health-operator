@@ -19,9 +19,7 @@ PLURAL = "serviceguards"
 
 DEFAULT_PROM = "http://prometheus-server.monitoring.svc.cluster.local"
 
-# --------------------------------------------------------------------------
-# The operator's own metrics (Part I §16.3 + Part II §13.1)
-# --------------------------------------------------------------------------
+
 RESTARTS = Counter("operator_pod_restarts_total",
                    "Pods restarted by the operator", ["deployment"])
 SCALES = Counter("operator_scale_events_total",
@@ -42,9 +40,8 @@ def _serve_metrics(**_):
     start_http_server(8000)
 
 
-# --------------------------------------------------------------------------
+
 # Lifecycle handlers
-# --------------------------------------------------------------------------
 @kopf.on.create(GROUP, VERSION, PLURAL)
 def on_create(spec, name, namespace, logger, **_):
     logger.info(f"ServiceGuard '{name}' created, guarding "
@@ -61,9 +58,10 @@ def on_delete(name, logger, **_):
     logger.info(f"ServiceGuard '{name}' deleted; no longer guarding.")
 
 
-# --------------------------------------------------------------------------
+
 # The reconciliation loop
-# --------------------------------------------------------------------------
+# ------------------------------------------------------------------------
+
 @kopf.timer(GROUP, VERSION, PLURAL, interval=30.0)
 def reconcile(spec, status, name, namespace, patch, logger, body, **_):
     target = spec["targetDeployment"]
@@ -81,7 +79,7 @@ def reconcile(spec, status, name, namespace, patch, logger, body, **_):
 
     # =================== REMEDIATION PIPELINE ===========================
 
-    # 1. garbage-collect dead pods (Chronic, safe) -- Part II §6
+    # 1. garbage-collect dead pods 
     if mode == "heal" and spec.get("gcDeadPods", True):
         pods = k8s.pod_summaries(namespace)
         dead = remediate.find_dead_pods(pods, spec.get("deadPodTTLMinutes", 60))
@@ -94,7 +92,7 @@ def reconcile(spec, status, name, namespace, patch, logger, body, **_):
             kopf.event(body, type="Normal", reason="DeadPodGC",
                        message=f"Garbage-collected {len(dead)} dead pod(s).")
 
-    # 2. restart crash-looping pods (Part I §12)
+    # 2. restart crash-looping pods
     if mode == "heal":
         restarted = remediate.remediate_crashloops(
             target, namespace, spec.get("restartOnCrashLoop", True), logger)
@@ -104,7 +102,7 @@ def reconcile(spec, status, name, namespace, patch, logger, body, **_):
             kopf.event(body, type="Normal", reason="CrashLoopRestart",
                        message=f"Restarted {len(restarted)} crash-looping pod(s).")
 
-    # 3. restart OOMKilled pods (budgeted) (Chronic) -- Part II §7
+    # 3. restart OOMKilled pods 
     if mode == "heal" and spec.get("oomRestartEnabled", True):
         csum = k8s.container_summaries(target, namespace)
         ooms = remediate.count_oomkills(csum)
@@ -125,7 +123,7 @@ def reconcile(spec, status, name, namespace, patch, logger, body, **_):
             advisory_findings.append(
                 {"issue": "persistent-oom", "detail": "raise memory limit / use VPA"})
 
-    # 4. detect stuck-Terminating; guarded force-delete -- Part II §8
+    # 4. detect stuck-Terminating
     if spec.get("stuckTerminatingDetect", True):
         pods = k8s.pod_summaries(namespace)
         stuck = remediate.find_stuck_terminating(
@@ -149,7 +147,7 @@ def reconcile(spec, status, name, namespace, patch, logger, body, **_):
                 logger.info(f"Pod {p['name']} stuck terminating; "
                             f"surfaced (no force-delete).")
 
-    # 5a. scheduled scale-down for non-prod (optional) -- Part II §10
+    # 5a. scheduled scale-down for non-prod 
     if spec.get("scheduleScaleDown", False) and mode == "heal":
         import datetime as _dt
         quiet = max(spec.get("minReplicas", 1), spec.get("quietReplicas", 1))
@@ -162,7 +160,7 @@ def reconcile(spec, status, name, namespace, patch, logger, body, **_):
             patch.status["currentReplicas"] = desired
             current = desired
 
-    # 5b. auto-scale on CPU (Part I §13)
+    # 5b. auto-scale on CPU 
     if mode == "heal":
         desired = remediate.decide_replicas(current, cpu, spec)
         if remediate.apply_scaling(target, namespace, desired, current, logger):
@@ -173,7 +171,7 @@ def reconcile(spec, status, name, namespace, patch, logger, body, **_):
             kopf.event(body, type="Normal", reason="Scaled",
                        message=f"Scaled {target} {current} -> {desired} (cpu={cpu}).")
 
-    # 6. audit & emit advisory findings (Design issues) -- Part II §9 (always)
+    # 6. audit & emit advisory findings 
     if spec.get("advisoryEnabled", True):
         dep = k8s.deployment_summary(target, namespace)
         advisory_findings.extend(remediate.audit_deployment(dep))
