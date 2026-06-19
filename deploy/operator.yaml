@@ -1,0 +1,33 @@
+# deploy/operator.yaml
+# Runs exactly one replica of the operator in-cluster, bound to the
+# least-privilege service account from rbac/rbac.yaml. One replica is correct:
+# two operators acting on the same resources would race. (Production uses
+# leader election; for this project a single instance is the simplest correct
+# choice.)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: service-health-operator
+  namespace: monitoring
+  labels: { app: service-health-operator }
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: service-health-operator }
+  template:
+    metadata:
+      labels: { app: service-health-operator }
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8000"
+    spec:
+      serviceAccountName: service-health-operator    # the RBAC identity
+      containers:
+        - name: operator
+          image: service-health-operator:0.1.0
+          imagePullPolicy: IfNotPresent
+          ports:
+            - { name: metrics, containerPort: 8000 }
+          resources:
+            requests: { cpu: "50m", memory: "64Mi" }
+            limits: { cpu: "200m", memory: "128Mi" }

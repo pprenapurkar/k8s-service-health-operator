@@ -1,0 +1,40 @@
+# examples/target-deployment.yaml
+# A small, deliberately controllable workload for the operator to guard.
+# CPU requests+limits are non-negotiable: Prometheus measures CPU usage
+# relative to the request, so without a request there is no meaningful
+# utilisation percentage to compute.
+#
+# DEVIATION FROM THE GUIDE: the guide uses hashicorp/http-echo, which is a
+# distroless image with no shell -- so the guide's live demos that `kubectl
+# exec ... sh -c "while true..."` to spike CPU (or allocate memory for an OOM)
+# cannot actually run against it. We use nginx:1.27-alpine instead: it has a
+# shell, serves HTTP, and accepts the same resource requests, so every live
+# demo in the guides works as written.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: demo-app
+  labels: { app: demo-app }
+spec:
+  replicas: 2
+  selector:
+    matchLabels: { app: demo-app }
+  template:
+    metadata:
+      labels: { app: demo-app }
+    spec:
+      containers:
+        - name: demo-app
+          image: nginx:1.27-alpine
+          ports: [{ containerPort: 80 }]
+          resources:
+            requests: { cpu: "50m", memory: "32Mi" }
+            limits: { cpu: "200m", memory: "64Mi" }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: demo-app
+spec:
+  selector: { app: demo-app }
+  ports: [{ port: 80, targetPort: 80 }]

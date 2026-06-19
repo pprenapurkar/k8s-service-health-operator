@@ -1,0 +1,27 @@
+# examples/guard-example.yaml
+# A sample ServiceGuard pointing at demo-app. Every field beyond
+# targetDeployment is optional (the CRD supplies safe defaults); they are
+# spelled out here for clarity.
+apiVersion: ops.example.com/v1
+kind: ServiceGuard
+metadata:
+  name: guard-demo-app
+spec:
+  targetDeployment: demo-app
+  minReplicas: 2
+  maxReplicas: 6
+  cpuHighPercent: 70
+  cpuLowPercent: 20
+  restartOnCrashLoop: true
+  mode: heal
+  # Part II remediations (all default-safe; shown explicitly)
+  gcDeadPods: true
+  deadPodTTLMinutes: 60
+  oomRestartEnabled: true
+  oomRestartBudget: 3
+  oomWindowMinutes: 30
+  stuckTerminatingDetect: true
+  stuckTerminatingGraceMinutes: 15
+  forceDeleteStuckPods: false        # DANGEROUS -> off by default
+  forceDeleteOnlyIfNodeGone: true
+  advisoryEnabled: true

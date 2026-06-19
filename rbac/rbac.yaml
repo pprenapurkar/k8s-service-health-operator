@@ -1,0 +1,52 @@
+# rbac/rbac.yaml
+# Least-privilege identity + permissions for the operator. Every verb below
+# maps to a specific action the operator takes; remove any line and a specific
+# feature starts getting "forbidden" errors.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: service-health-operator
+  namespace: monitoring
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: service-health-operator
+rules:
+  # watch our own custom resource (kopf needs watch + patch status)
+  - apiGroups: ["ops.example.com"]
+    resources: ["serviceguards", "serviceguards/status"]
+    verbs: ["get", "list", "watch", "patch", "update"]
+  # read + scale the guarded deployments (patch also drives rollout restart)
+  - apiGroups: ["apps"]
+    resources: ["deployments", "deployments/scale"]
+    verbs: ["get", "list", "watch", "patch"]
+  # read pod health and delete (restart / force-delete) pods
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list", "watch", "delete"]
+  # read nodes to verify a node is gone before any force-delete (Part II §11)
+  - apiGroups: [""]
+    resources: ["nodes"]
+    verbs: ["get", "list"]
+  # kopf stores progress via events; the operator also emits Events on actions
+  - apiGroups: [""]
+    resources: ["events"]
+    verbs: ["create", "patch"]
+  # kopf needs to read namespaces and (cluster-scoped) its own peering CRD
+  - apiGroups: [""]
+    resources: ["namespaces"]
+    verbs: ["list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: service-health-operator
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: service-health-operator
+subjects:
+  - kind: ServiceAccount
+    name: service-health-operator
+    namespace: monitoring

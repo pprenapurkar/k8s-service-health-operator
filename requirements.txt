@@ -1,0 +1,5 @@
+kopf==1.37.2              # the operator framework
+kubernetes==29.0.0        # official Kubernetes Python client
+requests==2.32.3          # to query Prometheus' HTTP API
+pytest==8.2.0             # for the unit tests
+prometheus-client==0.20.0 # to expose the operator's own metrics
