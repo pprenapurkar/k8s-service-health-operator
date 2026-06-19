@@ -173,7 +173,6 @@ tested without a cluster.
 - **[Hands-on guide](docs/HANDS_ON_GUIDE.md)** — navigate the cluster, every command explained
 - **[Architecture](docs/architecture.md)** — the loop, modes, rails, CRD reference
 - **[Runbook (core)](docs/runbook-operator.md)** & **[Runbook (extended)](docs/runbook-operator-extended.md)**
-- **[Verification report](docs/VERIFICATION.md)** — what was expected vs. built, and why each deviation exists
 
 ## A note on the package name
 
