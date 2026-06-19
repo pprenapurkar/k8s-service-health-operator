@@ -1,10 +1,3 @@
-"""Thin, single-responsibility wrappers over the Kubernetes Python client.
-
-Isolating every API call here keeps the decision logic in ``remediate.py``
-free of cluster dependencies, so it can be unit-tested without a cluster.
-The client auto-detects its environment: in-cluster it uses the mounted
-service-account token; on a laptop it uses your kubeconfig.
-"""
 from datetime import datetime, timezone
 
 from kubernetes import client, config
@@ -23,9 +16,7 @@ _apps = client.AppsV1Api()
 _core = client.CoreV1Api()
 
 
-# --------------------------------------------------------------------------
-# Part I: reads + scaling + crash-loop restart
-# --------------------------------------------------------------------------
+# reads + scaling + crash-loop restart
 def get_replicas(deployment: str, namespace: str) -> int:
     dep = _apps.read_namespaced_deployment(deployment, namespace)
     return dep.spec.replicas or 0
@@ -58,9 +49,9 @@ def restart_pod(pod_name: str, namespace: str) -> None:
     _core.delete_namespaced_pod(pod_name, namespace)
 
 
+# Dead-pod garbage collection observation + action
 # --------------------------------------------------------------------------
-# Part II §6: dead-pod garbage collection observation + action
-# --------------------------------------------------------------------------
+
 def pod_summaries(namespace: str) -> list[dict]:
     """Normalise every pod in a namespace into a small dict the pure
     decision functions can reason about without touching the client."""
@@ -88,9 +79,8 @@ def delete_pod_simple(name: str, namespace: str) -> None:
     _core.delete_namespaced_pod(name, namespace)
 
 
-# --------------------------------------------------------------------------
-# Part II §7: OOMKill detection + rolling restart
-# --------------------------------------------------------------------------
+# OOMKill detection + rolling restart
+# -------------------------------------------------------------------------------------
 def container_summaries(deployment: str, namespace: str) -> list[dict]:
     """Per-container OOM flags for a deployment's pods.
 
@@ -123,8 +113,7 @@ def rollout_restart(deployment: str, namespace: str) -> None:
     _apps.patch_namespaced_deployment(deployment, namespace, body)
 
 
-# --------------------------------------------------------------------------
-# Part II §8: stuck-Terminating guarded force-delete
+# Stuck-Terminating guarded force-delete
 # --------------------------------------------------------------------------
 def node_is_gone(node_name: str | None) -> bool:
     """True if the node object no longer exists -> kubelet cannot run pods."""
@@ -144,8 +133,7 @@ def force_delete_pod(name: str, namespace: str) -> None:
         body=client.V1DeleteOptions(grace_period_seconds=0))
 
 
-# --------------------------------------------------------------------------
-# Part II §9: advisory audit observation
+# Advisory audit observation
 # --------------------------------------------------------------------------
 def deployment_summary(deployment: str, namespace: str) -> dict:
     """Simplified view of a deployment's pod template for the advisory audit.
