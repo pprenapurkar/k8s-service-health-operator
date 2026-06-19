@@ -25,7 +25,7 @@ rules:
   - apiGroups: [""]
     resources: ["pods"]
     verbs: ["get", "list", "watch", "delete"]
-  # read nodes to verify a node is gone before any force-delete (Part II §11)
+  # read nodes to verify a node is gone before any force-delete 
   - apiGroups: [""]
     resources: ["nodes"]
     verbs: ["get", "list"]
